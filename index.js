@@ -95,6 +95,13 @@ app.post("/interview", async (req, res) => {
       });
 
       const data = await response.json();
+
+      console.log("YANDEX RESPONSE:", JSON.stringify(data));
+
+      if (!data.result || !data.result.alternatives) {
+        return sendText(res, "Ошибка YandexGPT: " + JSON.stringify(data));
+      }
+
       const reply = data.result.alternatives[0].message.text;
 
       session.history.push({ role: "user", text: message });
