@@ -10,83 +10,125 @@ const sessions = new Map();
 
 app.post("/interview", async (req, res) => {
   try {
-    const { vk_user_id, message, field, position, level } = req.body;
+    const userId = req.body.vk_user_id || "default_user";
+    const message = req.body.message || "";
 
-    const history = sessions.get(vk_user_id) || [];
+    let session = sessions.get(userId);
 
-    const prompt = `
-Ты HR-интервьюер, который проводит тренировочное собеседование с кандидатом.
+    if (!session) {
+      session = {
+        step: "ask_field",
+        field: "",
+        position: "",
+        level: "",
+        history: [],
+        answersCount: 0
+      };
+      sessions.set(userId, session);
 
-Сфера: ${field || "не указана"}
-Должность: ${position || "не указана"}
-Уровень: ${level || "не указан"}
+      return sendText(res, "Привет! Я помогу тебе потренироваться перед собеседованием.\n\nВ какой сфере ты хочешь пройти собеседование?");
+    }
 
-Твоя задача:
-провести живое собеседование, как настоящий HR.
+    if (session.step === "ask_field") {
+      session.field = message;
+      session.step = "ask_position";
+      return sendText(res, "Отлично. На какую должность ты проходишь собеседование?");
+    }
 
-Правила поведения:
-1. Не объясняй, каким должен быть хороший или плохой ответ.
-2. Не пиши фразы вроде: "ответ хороший, если..." или "ответ слабый, если...".
-3. Не раскрывай критерии оценки заранее.
+    if (session.step === "ask_position") {
+      session.position = message;
+      session.step = "ask_level";
+      return sendText(res, "Какой у тебя уровень? Например: без опыта, Junior, Middle или Senior.");
+    }
+
+    if (session.step === "ask_level") {
+      session.level = message;
+      session.step = "interview";
+      return sendText(res, "Хорошо, начинаем тренировочное собеседование.\n\nРасскажи коротко о себе и своем опыте.");
+    }
+
+    if (session.step === "interview") {
+      session.answersCount += 1;
+
+      const prompt = `
+Ты HR-интервьюер и карьерный тренер.
+
+Ты проводишь тренировочное собеседование.
+
+Сфера: ${session.field}
+Должность: ${session.position}
+Уровень: ${session.level}
+
+Правила:
+1. Не здоровайся повторно.
+2. Не пиши "ответ хороший, если..." или "ответ слабый, если...".
+3. Не объясняй критерии оценки заранее.
 4. Общайся напрямую с кандидатом.
-5. Задавай только один вопрос за раз.
-6. Если это начало интервью, сначала коротко поприветствуй кандидата.
-7. После ответа кандидата дай короткую обратную связь на 1-2 предложения.
-8. Потом задай следующий вопрос.
-9. После 7 ответов кандидата заверши интервью и дай итоговую оценку.
-
-Формат обычного ответа:
-короткая обратная связь по ответу кандидата + следующий вопрос.
-
-Формат первого сообщения:
-Приветствие + первый вопрос.
-
-Не используй списки критериев. Не объясняй, как надо отвечать. Просто проводи интервью.
+5. Дай короткую обратную связь на ответ кандидата.
+6. Затем задай один следующий вопрос.
+7. Если это 7-й ответ кандидата, заверши интервью и дай итог:
+- балл от 1 до 10;
+- сильные стороны;
+- слабые стороны;
+- рекомендации.
 `;
 
-    const response = await fetch("https://llm.api.cloud.yandex.net/foundationModels/v1/completion", {
-      method: "POST",
-      headers: {
-        "Authorization": `Api-Key ${API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        modelUri: `gpt://${FOLDER_ID}/yandexgpt/latest`,
-        completionOptions: {
-          stream: false,
-          temperature: 0.6,
-          maxTokens: 1000
+      const response = await fetch("https://llm.api.cloud.yandex.net/foundationModels/v1/completion", {
+        method: "POST",
+        headers: {
+          "Authorization": `Api-Key ${API_KEY}`,
+          "Content-Type": "application/json"
         },
-        messages: [
-          { role: "system", text: prompt },
-          ...history,
-          { role: "user", text: message || "Начать интервью" }
-        ]
-      })
-    });
+        body: JSON.stringify({
+          modelUri: `gpt://${FOLDER_ID}/yandexgpt/latest`,
+          completionOptions: {
+            stream: false,
+            temperature: 0.6,
+            maxTokens: 1000
+          },
+          messages: [
+            { role: "system", text: prompt },
+            ...session.history,
+            { role: "user", text: message }
+          ]
+        })
+      });
 
-    const data = await response.json();
-    const reply = data.result.alternatives[0].message.text;
+      const data = await response.json();
+      const reply = data.result.alternatives[0].message.text;
 
-    history.push({ role: "user", text: message || "Начать интервью" });
-    history.push({ role: "assistant", text: reply });
-    sessions.set(vk_user_id, history);
+      session.history.push({ role: "user", text: message });
+      session.history.push({ role: "assistant", text: reply });
 
-    res.setHeader("Content-Type", "text/plain; charset=utf-8");
-    res.status(200).send(reply);
+      if (session.answersCount >= 7) {
+        session.step = "finished";
+      }
+
+      return sendText(res, reply);
+    }
+
+    if (session.step === "finished") {
+      if (message.toLowerCase().includes("заново") || message.toLowerCase().includes("начать")) {
+        sessions.delete(userId);
+        return sendText(res, "Хорошо, начнем заново.\n\nВ какой сфере ты хочешь пройти собеседование?");
+      }
+
+      return sendText(res, "Интервью уже завершено. Напиши «заново», чтобы начать новое.");
+    }
 
   } catch (error) {
     console.log(error);
-    res.status(200).json({
-      reply: "Ошибка сервера. Проверь API_KEY, FOLDER_ID и логи Render.",
-      gpt_reply: "Ошибка сервера. Проверь API_KEY, FOLDER_ID и логи Render.",
-      text: "Ошибка сервера. Проверь API_KEY, FOLDER_ID и логи Render."
-    });
+    return sendText(res, "Ошибка сервера. Проверь Render logs, API_KEY и FOLDER_ID.");
   }
 });
 
 app.get("/", (req, res) => {
   res.send("Server is working");
 });
+
+function sendText(res, text) {
+  res.setHeader("Content-Type", "text/plain; charset=utf-8");
+  return res.status(200).send(text);
+}
 
 app.listen(process.env.PORT || 3000);
