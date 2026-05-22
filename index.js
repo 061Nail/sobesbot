@@ -55,8 +55,8 @@ app.post("/interview", async (req, res) => {
     history.push({ role: "assistant", text: reply });
     sessions.set(vk_user_id, history);
 
-    res.status(200).json({
-      test: reply});
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.status(200).send(reply);
 
   } catch (error) {
     console.log(error);
