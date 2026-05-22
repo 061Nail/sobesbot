@@ -56,10 +56,7 @@ app.post("/interview", async (req, res) => {
     sessions.set(vk_user_id, history);
 
     res.status(200).json({
-      reply: reply,
-      gpt_reply: reply,
-      text: reply
-    });
+      test: reply});
 
   } catch (error) {
     console.log(error);
