@@ -96,20 +96,15 @@ app.post("/interview", async (req, res) => {
       history
     );
 
-    res.json({
-      reply
-    });
-
-  } catch (error) {
-
-    console.log(error);
-
     res.status(200).json({
       reply: reply,
       gpt_reply: reply,
       text: reply
   });
 
+  } catch (error) {
+
+    console.log(error);
 });
 
 app.listen(
