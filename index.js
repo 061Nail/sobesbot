@@ -104,10 +104,7 @@ app.post("/interview", async (req, res) => {
 
     console.log(error);
 
-    res.json({
-      reply:
-        "Ошибка сервера"
-    });
+    res.type("text/plain").send(reply);
 
   }
 
