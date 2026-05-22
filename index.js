@@ -104,7 +104,7 @@ app.post("/interview", async (req, res) => {
 
     console.log(error);
 
-    res.type("text/plain").send(reply);
+    res.json({ reply });
 
   }
 
