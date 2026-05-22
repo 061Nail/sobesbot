@@ -104,9 +104,11 @@ app.post("/interview", async (req, res) => {
 
     console.log(error);
 
-    res.json({ reply });
-
-  }
+    res.status(200).json({
+      reply: reply,
+      gpt_reply: reply,
+      text: reply
+  });
 
 });
 
