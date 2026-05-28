@@ -30,7 +30,10 @@ if (!message) {
 
     let session = sessions.get(userId);
 
-    if (!session || isRestart(message)) {
+    if (isRestart(message)) {
+
+      sessions.delete(userId);
+
       session = {
         step: "ask_field",
         field: "",
@@ -39,6 +42,33 @@ if (!message) {
         history: [],
         answersCount: 0
       };
+
+      sessions.set(userId, session);
+
+      return sendText(
+        res,
+        "Привет! Начнем заново.\n\nВ какой сфере ты хочешь пройти собеседование?"
+      );
+    }
+
+if (!session) {
+
+  session = {
+    step: "ask_field",
+    field: "",
+    position: "",
+    level: "",
+    history: [],
+    answersCount: 0
+  };
+
+  sessions.set(userId, session);
+
+  return sendText(
+    res,
+    "Привет! Я помогу тебе потренироваться перед собеседованием.\n\nВ какой сфере ты хочешь пройти собеседование?"
+  );
+}
 
       sessions.set(userId, session);
 
