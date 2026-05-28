@@ -41,7 +41,7 @@ if (!message) {
         level: "",
         history: [],
         answersCount: 0
-      };
+        };
 
       sessions.set(userId, session);
 
@@ -51,8 +51,7 @@ if (!message) {
       );
     }
 
-if (!session) {
-
+if (!session || isRestart(message)) {
   session = {
     step: "ask_field",
     field: "",
@@ -66,17 +65,9 @@ if (!session) {
 
   return sendText(
     res,
-    "Привет! Я помогу тебе потренироваться перед собеседованием.\n\nВ какой сфере ты хочешь пройти собеседование?"
+    "Привет! Я помогу тебе потренироваться перед собеседованием.\n\nВ какой сфере ты хочешь пройти собеседование? Например: IT, продажи, маркетинг, дизайн."
   );
 }
-
-      sessions.set(userId, session);
-
-      return sendText(
-        res,
-        "Привет! Я помогу тебе потренироваться перед собеседованием.\n\nВ какой сфере ты хочешь пройти собеседование? Например: IT, продажи, маркетинг, дизайн."
-      );
-    }
 
     if (session.step === "ask_field") {
       session.field = message;
