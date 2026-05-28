@@ -15,11 +15,18 @@ app.get("/", (req, res) => {
 app.post("/interview", async (req, res) => {
   try {
     const userId = String(req.body.vk_user_id || req.body.user_id || "default_user");
-    const message = String(req.body.message || "").trim();
+    const message = String(
+      req.body.message ||
+      req.body.user_message ||
+      req.body.text ||
+      req.body.body ||
+      req.body.query ||
+      ""
+    ).trim();
 
-    if (!message) {
-      return sendText(res, "Напиши сообщение текстом, например: начать");
-    }
+if (!message) {
+  return res.status(204).send();
+}
 
     let session = sessions.get(userId);
 
