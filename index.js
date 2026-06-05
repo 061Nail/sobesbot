@@ -92,7 +92,8 @@ if (!session || isRestart(message)) {
       return sendText(
         res,
         "Хорошо, начинаем тренировочное собеседование.\n\nРасскажи коротко о себе и своём опыте."
-  );
+      );
+    }
 
     if (session.step === "interview") {
       session.answersCount += 1;
