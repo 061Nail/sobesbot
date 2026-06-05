@@ -126,6 +126,7 @@ if (!session || isRestart(message)) {
 - слабые стороны;
 - рекомендации;
 - пример улучшенного ответа.
+15. Если данные кандидата уже указаны в блоке "Данные кандидата", никогда не проси повторно сферу, должность или уровень.
 
 Формат обычного ответа:
 Короткая оценка ответа кандидата.
@@ -207,13 +208,8 @@ function sendText(res, text) {
 }
 
 function isRestart(message) {
-  const text = message.toLowerCase();
-  return (
-    text.includes("начать") ||
-    text.includes("старт") ||
-    text.includes("заново") ||
-    text.includes("restart")
-  );
+  const text = message.toLowerCase().trim();
+  return text === "заново" || text === "restart";
 }
 
 app.listen(process.env.PORT || 3000, () => {
