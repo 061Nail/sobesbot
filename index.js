@@ -81,6 +81,19 @@ if (!session || isRestart(message)) {
       return sendText(res, "Какой у тебя уровень?");
     }
 
+    if (session.step === "ask_level") {
+      session.level = message;
+      session.step = "interview";
+      session.answersCount = 0;
+      session.history = [];
+
+      sessions.set(userId, session);
+
+      return sendText(
+        res,
+        "Хорошо, начинаем тренировочное собеседование.\n\nРасскажи коротко о себе и своём опыте."
+  );
+
     if (session.step === "interview") {
       session.answersCount += 1;
 
